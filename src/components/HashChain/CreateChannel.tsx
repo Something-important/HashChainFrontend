@@ -832,26 +832,20 @@ export function CreateChannel({ setIsLoading }: CreateChannelProps) {
 
         {/* Status Messages */}
         {isPending && <p className="text-yellow-600 bg-yellow-50 p-3 rounded">Transaction pending...</p>}
-        {status && (
-          <p className="text-green-600 bg-green-50 p-3 rounded">
-            {status.includes('Transaction sent to mempool!') ? (
-              <>
-                Transaction sent to mempool!{' '}
-                <a
-                  href={`https://calibration.filscan.io/en/tx/${status.split(' ').pop()}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-blue-600 hover:text-blue-800 underline"
-                >
-                  {status.split(' ').pop()}
-                </a>
-              </>
-            ) : (
-              status
-            )}
-          </p>
-        )}
+        {status && <p className="text-green-600 bg-green-50 p-3 rounded">{status}</p>}
         {errorMessage && <p className="text-red-600 bg-red-50 p-3 rounded">Error: {errorMessage}</p>}
+
+        {/* Transaction Link */}
+        {txHash && (
+          <a
+            href={`https://calibration.filscan.io/en/tx/${txHash}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline"
+          >
+            View on Calibration Explorer <br></br>
+          </a>
+        )}
 
         {/* Token Support Status */}
         {tokenAddress !== "0x0000000000000000000000000000000000000000" && (
@@ -866,6 +860,12 @@ export function CreateChannel({ setIsLoading }: CreateChannelProps) {
           </div>
         )}
 
+        {/* Debug Output for Button State */}
+        <div className="mb-2 p-2 bg-gray-100 rounded text-xs text-gray-700">
+          <div><strong>Debug:</strong></div>
+          <div>isConnected: {String(isConnected)}</div>
+          <div>permitChecking: {String(permitChecking)}</div>
+        </div>
         {/* Create Channel Button */}
         <button
           onClick={async () => {
