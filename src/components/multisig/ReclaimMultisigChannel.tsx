@@ -42,7 +42,7 @@ export function ReclaimMultisigChannel({ isLoading, setIsLoading }: ReclaimMulti
   // Check network
   useEffect(() => {
     if (chainId && chainId !== MULTISIG_TARGET_CHAIN.chainId) {
-      console.log(`Warning: You're on chain ${chainId}, but the contract is deployed on ${MULTISIG_TARGET_CHAIN.chainId}`);
+      // console.log(`Warning: You're on chain ${chainId}, but the contract is deployed on ${MULTISIG_TARGET_CHAIN.chainId}`);
     } else if (isConnected) {
       setErrorMessage(null);
     }
@@ -112,12 +112,12 @@ export function ReclaimMultisigChannel({ isLoading, setIsLoading }: ReclaimMulti
       );
 
       setTxHash(tx.hash);
-      setStatus(`Transaction sent to mempool! Hash: ${tx.hash}`);
+      setStatus(`Transaction sent to mempool! ${tx.hash}`);
 
       const receipt = await tx.wait();
       setStatus(`Transaction confirmed in block: ${receipt.blockNumber}`);
     } catch (err: any) {
-      console.error('ReclaimMultisigChannel error:', err);
+      // console.error('ReclaimMultisigChannel error:', err);
       
       let errorMsg = "Unknown error";
       
@@ -195,7 +195,23 @@ export function ReclaimMultisigChannel({ isLoading, setIsLoading }: ReclaimMulti
         
         {status && (
           <div className="p-3 bg-green-50 border border-green-200 rounded">
-            <p className="text-green-800 font-medium">{status}</p>
+            <p className="text-green-800 font-medium">
+              {status.includes('Transaction sent to mempool!') ? (
+                <>
+                  Transaction sent to mempool!{' '}
+                  <a
+                    href={`https://calibration.filscan.io/en/tx/${status.split(' ').pop()}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 hover:text-blue-800 underline"
+                  >
+                    {status.split(' ').pop()}
+                  </a>
+                </>
+              ) : (
+                status
+              )}
+            </p>
           </div>
         )}
         
@@ -204,18 +220,6 @@ export function ReclaimMultisigChannel({ isLoading, setIsLoading }: ReclaimMulti
             <p className="text-red-800 font-medium">Error</p>
             <p className="text-red-700 text-sm">{errorMessage}</p>
           </div>
-        )}
-
-        {/* Transaction Link */}
-        {txHash && (
-          <a
-            href={`https://calibration.filscan.io/en/tx/${txHash}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="underline"
-          >
-            View on Calibration Explorer
-          </a>
         )}
 
         {/* Reclaim Channel Button */}

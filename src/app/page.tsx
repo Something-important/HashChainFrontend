@@ -14,12 +14,10 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex justify-between items-center">
             <div className="flex items-center space-x-4">
-              <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center text-white font-bold">
-                H
-              </div>
+              {/* Logo removed - favicon doesn't display well as image */}
               <div>
                 <h1 className="text-xl font-bold text-gray-800">Hashchain Protocol</h1>
-                <p className="text-sm text-gray-600">Payment Channel Management</p>
+                <p className="text-sm text-gray-600">Fast, Fair, and Scalable – One Hash at a Time</p>
               </div>
             </div>
             <ConnectButton />
@@ -39,7 +37,7 @@ export default function Home() {
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
-              🔗 HashPay Channels
+              🔗 MuPay Channels
             </button>
             <button
               onClick={() => setActivePaymentType('multisig')}

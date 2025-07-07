@@ -1,5 +1,5 @@
 // Multisig Contract Configuration
-export const MULTISIG_CONTRACT_ADDRESS = "0x23fcC71065674F67477607a6b226b38a4172BFe9";
+export const MULTISIG_CONTRACT_ADDRESS = "0xd57A97f616bbDFCF4D854a24552AEeD818fDBEf7";
 
 // Target chain: Filecoin Calibration Testnet
 export const MULTISIG_TARGET_CHAIN = {

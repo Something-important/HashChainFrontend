@@ -34,7 +34,7 @@ export function MultisigPay() {
         return <MultisigTools isLoading={isLoading} setIsLoading={setIsLoading} />;
       case "test":
         return <CreateChannelPermit onChannelCreated={(channelId) => {
-          console.log('Channel created:', channelId);
+          // console.log('Channel created:', channelId);
         }} />;
       default:
         return <CreateMultisigChannel isLoading={isLoading} setIsLoading={setIsLoading} />;

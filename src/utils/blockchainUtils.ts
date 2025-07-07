@@ -19,7 +19,7 @@ export const getCurrentBlockNumber = async (): Promise<bigint> => {
   try {
     return await publicClient.getBlockNumber();
   } catch (error) {
-    console.error('Error getting current block number:', error);
+    // console.error('Error getting current block number:', error);
     return BigInt(0);
   }
 };
@@ -55,7 +55,7 @@ export const getChannelInfo = async (
     
     return null;
   } catch (error: any) {
-    console.error('Error getting channel info:', error);
+    // console.error('Error getting channel info:', error);
     return null;
   }
 };
@@ -63,10 +63,10 @@ export const getChannelInfo = async (
 // Debug contract state
 export const debugContractState = async (payer: Address, merchant: Address, token: Address) => {
   try {
-    console.log('🔍 Debugging contract state...');
-    console.log('  - Payer:', payer);
-    console.log('  - Merchant:', merchant);
-    console.log('  - Token:', token);
+    // console.log('🔍 Debugging contract state...');
+    // console.log('  - Payer:', payer);
+    // console.log('  - Merchant:', merchant);
+    // console.log('  - Token:', token);
     
     // Try to read channel info
     const channelInfo = await publicClient.readContract({
@@ -76,7 +76,7 @@ export const debugContractState = async (payer: Address, merchant: Address, toke
       args: [payer, merchant, token],
     });
     
-    console.log('🔍 Channel info:', channelInfo);
+    // console.log('🔍 Channel info:', channelInfo);
     
     // Check if channel exists and has funds
     // channelInfo is returned as an array: [token, trustAnchor, amount, numberOfTokens, merchantWithdrawAfterBlocks, payerWithdrawAfterBlocks]
@@ -84,21 +84,21 @@ export const debugContractState = async (payer: Address, merchant: Address, toke
       const [token, trustAnchor, amount, numberOfTokens, merchantWithdrawAfterBlocks, payerWithdrawAfterBlocks] = channelInfo;
       
       if (amount > BigInt(0)) {
-        console.log('✅ Channel exists with funds');
-        console.log('  - Amount:', formatTokenAmount(amount));
-        console.log('  - Trust Anchor:', trustAnchor);
-        console.log('  - Number of Tokens:', numberOfTokens);
-        console.log('  - Merchant Withdraw After:', merchantWithdrawAfterBlocks);
-        console.log('  - Payer Withdraw After:', payerWithdrawAfterBlocks);
+        // console.log('✅ Channel exists with funds');
+        // console.log('  - Amount:', formatTokenAmount(amount));
+        // console.log('  - Trust Anchor:', trustAnchor);
+        // console.log('  - Number of Tokens:', numberOfTokens);
+        // console.log('  - Merchant Withdraw After:', merchantWithdrawAfterBlocks);
+        // console.log('  - Payer Withdraw After:', payerWithdrawAfterBlocks);
       
         const currentBlock = await getCurrentBlockNumber();
-        console.log('  - Current Block:', currentBlock.toString());
+        // console.log('  - Current Block:', currentBlock.toString());
         
         const blocksUntilMerchantReclaim = BigInt(merchantWithdrawAfterBlocks) - currentBlock;
         const blocksUntilPayerReclaim = BigInt(payerWithdrawAfterBlocks) - currentBlock;
         
-        console.log('  - Blocks until merchant can reclaim:', blocksUntilMerchantReclaim.toString());
-        console.log('  - Blocks until payer can reclaim:', blocksUntilPayerReclaim.toString());
+        // console.log('  - Blocks until merchant can reclaim:', blocksUntilMerchantReclaim.toString());
+        // console.log('  - Blocks until payer can reclaim:', blocksUntilPayerReclaim.toString());
         
         // Check if payer can reclaim (only payer can reclaim unused funds)
         const canPayerReclaim = blocksUntilPayerReclaim <= BigInt(0);
@@ -110,7 +110,7 @@ export const debugContractState = async (payer: Address, merchant: Address, toke
           channelInfo
         };
       } else {
-        console.log('❌ Channel exists but has no funds');
+        // console.log('❌ Channel exists but has no funds');
         return {
           exists: false,
           canPayerReclaim: false,
@@ -119,7 +119,7 @@ export const debugContractState = async (payer: Address, merchant: Address, toke
         };
       }
     } else {
-      console.log('❌ Channel does not exist');
+      // console.log('❌ Channel does not exist');
       return {
         exists: false,
         canPayerReclaim: false,
@@ -128,7 +128,7 @@ export const debugContractState = async (payer: Address, merchant: Address, toke
       };
     }
   } catch (error: any) {
-    console.error('Error debugging contract state:', error);
+    // console.error('Error debugging contract state:', error);
     return {
       exists: false,
       canPayerReclaim: false,

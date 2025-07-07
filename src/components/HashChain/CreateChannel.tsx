@@ -282,34 +282,34 @@ export function CreateChannel({ setIsLoading }: CreateChannelProps) {
       );
 
       setTxHash(tx.hash);
-      setStatus(`Transaction sent to mempool! Hash: ${tx.hash}`);
+      setStatus(`Transaction sent to mempool! ${tx.hash}`);
 
       const receipt = await tx.wait();
       setStatus(`Transaction confirmed in block: ${receipt.blockNumber}`);
     } catch (err: any) {
-      console.error('CreateChannel error:', err);
+      // console.error('CreateChannel error:', err);
       
       let errorMsg = "Unknown error";
       
-      // Handle specific contract errors from the ABI
+      // Handle specific contract errors
       if (err.code === "INSUFFICIENT_FUNDS") {
         errorMsg = "Insufficient FIL for gas or transaction.";
       } else if (err.code === "UNPREDICTABLE_GAS_LIMIT") {
         errorMsg = "Cannot estimate gas. Check contract address or parameters.";
       } else if (err.code === -32603 || err.message?.includes("Internal JSON-RPC error")) {
-        errorMsg = "RPC Error: Token address may not exist or be invalid. Try using 0x0000000000000000000000000000000000000000 for native FIL.";
+        errorMsg = `Internal RPC Error: ${err.message || err.reason || 'Unknown RPC error'}. This usually indicates a contract state issue or invalid parameters.`;
       } else if (err.errorName === "ChannelAlreadyExist") {
         errorMsg = "Channel already exists for this payer/merchant/token combination.";
       } else if (err.errorName === "IncorrectAmount") {
         errorMsg = "Incorrect amount sent. Check the amount field.";
-      } else if (err.errorName === "MerchantWithdrawTimeTooShort") {
-        errorMsg = "Merchant withdraw time is too short. Increase the merchant withdraw blocks.";
-      } else if (err.errorName === "ZeroTokensNotAllowed") {
-        errorMsg = "Number of tokens must be greater than 0.";
+      } else if (err.errorName === "ReclaimAfterMustBeAfterExpiration") {
+        errorMsg = "Reclaim delay must be greater than duration.";
       } else if (err.errorName === "AddressIsNotContract") {
         errorMsg = "Token address is not a contract.";
       } else if (err.errorName === "AddressIsNotERC20") {
         errorMsg = "Token address is not a valid ERC20 token.";
+      } else if (err.errorName === "InsufficientAllowance") {
+        errorMsg = "Token allowance insufficient. Please approve tokens first.";
       } else if (err.message && err.message.includes("Error decoding failed")) {
         errorMsg = "Contract error: Invalid parameters or contract state. Check your inputs.";
       } else if (err.reason) {
@@ -503,33 +503,34 @@ export function CreateChannel({ setIsLoading }: CreateChannelProps) {
       );
 
       setTxHash(tx.hash);
-      setStatus(`Transaction sent to mempool! Hash: ${tx.hash}`);
+      setStatus(`Transaction sent to mempool! ${tx.hash}`);
 
       const receipt = await tx.wait();
       setStatus(`Transaction confirmed in block: ${receipt.blockNumber}`);
     } catch (err: any) {
-      console.error('CreateChannelWithPermit error:', err);
+      // console.error('CreateChannelWithPermit error:', err);
       
       let errorMsg = "Unknown error";
       
+      // Handle specific contract errors
       if (err.code === "INSUFFICIENT_FUNDS") {
         errorMsg = "Insufficient FIL for gas or transaction.";
       } else if (err.code === "UNPREDICTABLE_GAS_LIMIT") {
         errorMsg = "Cannot estimate gas. Check contract address or parameters.";
       } else if (err.code === -32603 || err.message?.includes("Internal JSON-RPC error")) {
-        errorMsg = "RPC Error: Token address may not exist or be invalid.";
+        errorMsg = `Internal RPC Error: ${err.message || err.reason || 'Unknown RPC error'}. This usually indicates a contract state issue or invalid parameters.`;
       } else if (err.errorName === "ChannelAlreadyExist") {
         errorMsg = "Channel already exists for this payer/merchant/token combination.";
       } else if (err.errorName === "IncorrectAmount") {
         errorMsg = "Incorrect amount sent. Check the amount field.";
-      } else if (err.errorName === "MerchantWithdrawTimeTooShort") {
-        errorMsg = "Merchant withdraw time is too short. Increase the merchant withdraw blocks.";
-      } else if (err.errorName === "ZeroTokensNotAllowed") {
-        errorMsg = "Number of tokens must be greater than 0.";
+      } else if (err.errorName === "ReclaimAfterMustBeAfterExpiration") {
+        errorMsg = "Reclaim delay must be greater than duration.";
       } else if (err.errorName === "AddressIsNotContract") {
         errorMsg = "Token address is not a contract.";
       } else if (err.errorName === "AddressIsNotERC20") {
         errorMsg = "Token address is not a valid ERC20 token.";
+      } else if (err.errorName === "InsufficientAllowance") {
+        errorMsg = "Token allowance insufficient. Please approve tokens first.";
       } else if (err.message && err.message.includes("Error decoding failed")) {
         errorMsg = "Contract error: Invalid parameters or contract state. Check your inputs.";
       } else if (err.reason) {
@@ -831,20 +832,26 @@ export function CreateChannel({ setIsLoading }: CreateChannelProps) {
 
         {/* Status Messages */}
         {isPending && <p className="text-yellow-600 bg-yellow-50 p-3 rounded">Transaction pending...</p>}
-        {status && <p className="text-green-600 bg-green-50 p-3 rounded">{status}</p>}
-        {errorMessage && <p className="text-red-600 bg-red-50 p-3 rounded">Error: {errorMessage}</p>}
-
-        {/* Transaction Link */}
-        {txHash && (
-          <a
-            href={`https://calibration.filscan.io/en/tx/${txHash}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="underline"
-          >
-            View on Calibration Explorer
-          </a>
+        {status && (
+          <p className="text-green-600 bg-green-50 p-3 rounded">
+            {status.includes('Transaction sent to mempool!') ? (
+              <>
+                Transaction sent to mempool!{' '}
+                <a
+                  href={`https://calibration.filscan.io/en/tx/${status.split(' ').pop()}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-600 hover:text-blue-800 underline"
+                >
+                  {status.split(' ').pop()}
+                </a>
+              </>
+            ) : (
+              status
+            )}
+          </p>
         )}
+        {errorMessage && <p className="text-red-600 bg-red-50 p-3 rounded">Error: {errorMessage}</p>}
 
         {/* Token Support Status */}
         {tokenAddress !== "0x0000000000000000000000000000000000000000" && (
@@ -859,13 +866,6 @@ export function CreateChannel({ setIsLoading }: CreateChannelProps) {
           </div>
         )}
 
-        {/* Debug Output for Button State */}
-        <div className="mb-2 p-2 bg-gray-100 rounded text-xs text-gray-700">
-          <div><strong>Debug:</strong></div>
-          <div>isPending: {String(isPending)}</div>
-          <div>isConnected: {String(isConnected)}</div>
-          <div>permitChecking: {String(permitChecking)}</div>
-        </div>
         {/* Create Channel Button */}
         <button
           onClick={async () => {

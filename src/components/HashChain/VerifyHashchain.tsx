@@ -26,11 +26,11 @@ export function VerifyHashchain({ isLoading, setIsLoading }: VerifyHashchainProp
     setVerificationResult(null);
     
     try {
-      console.log('🔍 Verifying hashchain locally with params:', {
-        trustAnchor: verifyForm.trustAnchor,
-        hashToTest: verifyForm.hashToTest,
-        numberOfHashes: verifyForm.numberOfHashes
-      });
+      // console.log('🔍 Verifying hashchain locally with params:', {
+      //   trustAnchor: verifyForm.trustAnchor,
+      //   hashToTest: verifyForm.hashToTest,
+      //   numberOfHashes: verifyForm.numberOfHashes
+      // });
 
       // First, calculate how many hashes are actually needed
       const hashesNeeded = calculateHashesNeeded(verifyForm.hashToTest, verifyForm.trustAnchor);
@@ -62,13 +62,13 @@ export function VerifyHashchain({ isLoading, setIsLoading }: VerifyHashchainProp
       setVerificationResult(result);
 
       if (result.isValid) {
-        console.log('✅ Hashchain verification successful');
+        // console.log('✅ Hashchain verification successful');
         toast.success('Hashchain verification successful!');
       } else {
         toast.error('Hashchain verification failed: Hash cannot be derived');
       }
     } catch (error: any) {
-      console.error('❌ Error verifying hashchain:', error);
+      // console.error('❌ Error verifying hashchain:', error);
       toast.error('Failed to verify hashchain');
       setVerificationResult({ success: false, error: error.message || 'Unknown error' });
     } finally {

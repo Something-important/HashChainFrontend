@@ -119,10 +119,10 @@ export function RedeemChannel({ isLoading, setIsLoading }: RedeemChannelProps) {
     }
 
     // Debug: Check if you're the merchant
-    console.log("🔍 Debug: Checking roles...");
-    console.log("  - Your address:", address);
-    console.log("  - Payer address:", payer);
-    console.log("  - Are you the merchant?", address.toLowerCase() !== payer.toLowerCase());
+    // console.log("🔍 Debug: Checking roles...");
+    // console.log("  - Your address:", address);
+    // console.log("  - Payer address:", payer);
+    // console.log("  - Are you the merchant?", address.toLowerCase() !== payer.toLowerCase());
     
     if (address.toLowerCase() === payer.toLowerCase()) {
       setErrorMessage("You are the payer. Only the merchant can redeem payments. Use the Reclaim tab to reclaim unused funds.");
@@ -146,16 +146,16 @@ export function RedeemChannel({ isLoading, setIsLoading }: RedeemChannelProps) {
       }
 
       setStatus("Initiating redeem transaction...");
-      console.log("Initiating redeem transaction with:", { payer, tokenAddress, finalHashValue, numberOfTokensUsed });
+      // console.log("Initiating redeem transaction with:", { payer, tokenAddress, finalHashValue, numberOfTokensUsed });
       const tx = await hashchainSDK.redeemChannel({
         payer: payer,
         tokenAddress: utils.getAddress(tokenAddress),
         finalHashValue: finalHashValue,
         numberOfTokensUsed: parsedTokensUsed,
       });
-      console.log("Transaction hash:", tx);
+      // console.log("Transaction hash:", tx);
       setTxHash(tx.hash);
-      setStatus(`Transaction sent to mempool! Hash: ${tx.hash}`);
+      setStatus(`Transaction sent to mempool! ${tx.hash}`);
 
       const receipt = await tx.wait();
       setStatus(`Transaction confirmed in block: ${receipt.blockNumber}`);
@@ -166,13 +166,13 @@ export function RedeemChannel({ isLoading, setIsLoading }: RedeemChannelProps) {
       setFinalHashValue("");
       setNumberOfTokensUsed("");
     } catch (err: any) {
-      console.log("Redeem Error Details:", {
-        code: err.code,
-        reason: err.reason,
-        message: err.message,
-        data: err.data,
-        error: err
-      });
+      // console.log("Redeem Error Details:", {
+      //   code: err.code,
+      //   reason: err.reason,
+      //   message: err.message,
+      //   data: err.data,
+      //   error: err
+      // });
       
       let errorMsg = "Unknown error";
       
@@ -267,20 +267,26 @@ export function RedeemChannel({ isLoading, setIsLoading }: RedeemChannelProps) {
 
         {/* Status Messages */}
         {isPending && <p className="text-yellow-600 bg-yellow-50 p-3 rounded">Transaction pending...</p>}
-        {status && <p className="text-green-600 bg-green-50 p-3 rounded">{status}</p>}
-        {errorMessage && <p className="text-red-600 bg-red-50 p-3 rounded">Error: {errorMessage}</p>}
-
-        {/* Transaction Link */}
-        {txHash && (
-          <a
-            href={`https://calibration.filscan.io/en/tx/${txHash}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="underline"
-          >
-            View on Calibration Explorer
-          </a>
+        {status && (
+          <p className="text-green-600 bg-green-50 p-3 rounded">
+            {status.includes('Transaction sent to mempool!') ? (
+              <>
+                Transaction sent to mempool!{' '}
+                <a
+                  href={`https://calibration.filscan.io/en/tx/${status.split(' ').pop()}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-600 hover:text-blue-800 underline"
+                >
+                  {status.split(' ').pop()}
+                </a>
+              </>
+            ) : (
+              status
+            )}
+          </p>
         )}
+        {errorMessage && <p className="text-red-600 bg-red-50 p-3 rounded">Error: {errorMessage}</p>}
 
         {/* Redeem Button */}
         <button

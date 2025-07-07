@@ -41,7 +41,7 @@ export function ChannelInspector({ isLoading, setIsLoading }: ChannelInspectorPr
       );
 
       if (result) {
-        console.log('✅ Channel info retrieved:', result);
+        // console.log('✅ Channel info retrieved:', result);
         setChannelInfo({
           payer: inspectForm.payerAddress,
           merchant: inspectForm.merchantAddress,
@@ -60,14 +60,14 @@ export function ChannelInspector({ isLoading, setIsLoading }: ChannelInspectorPr
         toast.success('Channel inspection completed!');
         setSearchStatus('Inspection completed successfully');
       } else {
-        console.log('❌ No channel found');
+        // console.log('❌ No channel found');
         setChannelInfo(null);
         setDebugInfo(null);
         toast.error('No channel found with the provided parameters');
         setSearchStatus('No channel found');
       }
     } catch (error) {
-      console.error('❌ Error inspecting channel:', error);
+      // console.error('❌ Error inspecting channel:', error);
       toast.error('Failed to inspect channel');
       setChannelInfo(null);
       setDebugInfo(null);

@@ -130,7 +130,7 @@ export function ReclaimChannel({ isLoading, setIsLoading }: ReclaimChannelProps)
 
       console.log("Transaction hash:", tx.hash);
       setTxHash(tx.hash);
-      setStatus(`Transaction sent to mempool! Hash: ${tx.hash}`);
+      setStatus(`Transaction sent to mempool! ${tx.hash}`);
 
       const receipt = await tx.wait();
       setStatus(`Transaction confirmed in block: ${receipt.blockNumber}`);
@@ -139,20 +139,15 @@ export function ReclaimChannel({ isLoading, setIsLoading }: ReclaimChannelProps)
       setMerchant("");
       setTokenAddress("0x0000000000000000000000000000000000000000");
     } catch (err: any) {
-      console.log("Reclaim Error Details:", {
-        code: err.code,
-        reason: err.reason,
-        message: err.message,
-        data: err.data,
-        error: err
-      });
-      
       let errorMsg = "Unknown error";
       
+      // Handle specific error types with detailed messages
       if (err.code === "INSUFFICIENT_FUNDS") {
         errorMsg = "Insufficient FIL for gas or transaction.";
       } else if (err.code === "UNPREDICTABLE_GAS_LIMIT") {
         errorMsg = "Cannot estimate gas. The contract may have reverted or has invalid state.";
+      } else if (err.code === -32603 || err.message?.includes("Internal JSON-RPC error")) {
+        errorMsg = `Internal RPC Error: ${err.message || err.reason || 'Unknown RPC error'}. This usually indicates a contract state issue or invalid parameters.`;
       } else if (err.reason) {
         errorMsg = `Contract Error: ${err.reason}`;
       } else if (err.data?.message) {
@@ -207,20 +202,26 @@ export function ReclaimChannel({ isLoading, setIsLoading }: ReclaimChannelProps)
 
         {/* Status Messages */}
         {isPending && <p className="text-yellow-600 bg-yellow-50 p-3 rounded">Transaction pending...</p>}
-        {status && <p className="text-green-600 bg-green-50 p-3 rounded">{status}</p>}
-        {errorMessage && <p className="text-red-600 bg-red-50 p-3 rounded">Error: {errorMessage}</p>}
-
-        {/* Transaction Link */}
-        {txHash && (
-          <a
-            href={`https://calibration.filscan.io/en/tx/${txHash}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="underline"
-          >
-            View on Calibration Explorer
-          </a>
+        {status && (
+          <p className="text-green-600 bg-green-50 p-3 rounded">
+            {status.includes('Transaction sent to mempool!') ? (
+              <>
+                Transaction sent to mempool!{' '}
+                <a
+                  href={`https://calibration.filscan.io/en/tx/${status.split(' ').pop()}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-600 hover:text-blue-800 underline"
+                >
+                  {status.split(' ').pop()}
+                </a>
+              </>
+            ) : (
+              status
+            )}
+          </p>
         )}
+        {errorMessage && <p className="text-red-600 bg-red-50 p-3 rounded">Error: {errorMessage}</p>}
 
         {/* Reclaim Button */}
         <button

@@ -52,7 +52,7 @@ export function MultisigChannelInspector({ isLoading, setIsLoading }: MultisigCh
   // Check network
   useEffect(() => {
     if (chainId && chainId !== MULTISIG_TARGET_CHAIN.chainId) {
-      console.log(`Warning: You're on chain ${chainId}, but the contract is deployed on ${MULTISIG_TARGET_CHAIN.chainId}`);
+      // console.log(`Warning: You're on chain ${chainId}, but the contract is deployed on ${MULTISIG_TARGET_CHAIN.chainId}`);
     } else if (isConnected) {
       setErrorMessage(null);
     }
@@ -129,7 +129,7 @@ export function MultisigChannelInspector({ isLoading, setIsLoading }: MultisigCh
       setChannelInfo(channelInfo);
       setStatus("Channel information retrieved successfully!");
     } catch (err: any) {
-      console.error('MultisigChannelInspector error:', err);
+      // console.error('MultisigChannelInspector error:', err);
       
       let errorMsg = "Unknown error";
       

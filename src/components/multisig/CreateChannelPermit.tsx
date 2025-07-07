@@ -95,19 +95,19 @@ const CreateChannelPermit: React.FC<CreateChannelPermitProps> = ({ onChannelCrea
       setTokenName(name);
       setTokenSymbol(symbol);
       setPermitSupported(true);
-      console.log("✅ Token supports permit");
+      // console.log("✅ Token supports permit");
     } catch (error: any) {
       // Check if it's a user rejection - don't mark as unsupported in this case
-      if (error.message && error.message.includes('User rejected')) {
-        console.log("⚠️ User rejected signature request during permit check - token may still support permit");
-        // Don't set permitSupported to false for user rejections
-        setPermitSupported(null); // Keep it as unknown
-      } else {
-        setPermitSupported(false);
-        setTokenName('');
-        setTokenSymbol('');
-        console.log("❌ Token does not support permit");
-      }
+              if (error.message && error.message.includes('User rejected')) {
+          // console.log("⚠️ User rejected signature request during permit check - token may still support permit");
+          // Don't set permitSupported to false for user rejections
+          setPermitSupported(null); // Keep it as unknown
+        } else {
+          setPermitSupported(false);
+          setTokenName('');
+          setTokenSymbol('');
+          // console.log("❌ Token does not support permit");
+        }
     } finally {
       setPermitChecking(false);
     }
@@ -128,7 +128,7 @@ const CreateChannelPermit: React.FC<CreateChannelPermitProps> = ({ onChannelCrea
 
     // If permit support is unknown (null), try anyway and let the contract decide
     if (permitSupported === null) {
-      console.log("⚠️ Permit support unknown - attempting anyway");
+      // console.log("⚠️ Permit support unknown - attempting anyway");
     }
 
     const resolvedSigner = new providers.Web3Provider(walletClient as any, {
@@ -150,7 +150,7 @@ const CreateChannelPermit: React.FC<CreateChannelPermitProps> = ({ onChannelCrea
     try {
       decimals = await tokenContract.decimals();
     } catch {
-      console.log("Using default decimals: 18");
+      // console.log("Using default decimals: 18");
     }
 
     const nonce = await tokenContract.nonces(address);
@@ -193,14 +193,14 @@ const CreateChannelPermit: React.FC<CreateChannelPermitProps> = ({ onChannelCrea
     };
 
     // Log permit data for debugging
-    console.log('Permit data:', {
-      domain,
-      types,
-      value,
-      currentTime,
-      deadline,
-      nonce: nonce.toString()
-    });
+    // console.log('Permit data:', {
+    //   domain,
+    //   types,
+    //   value,
+    //   currentTime,
+    //   deadline,
+    //   nonce: nonce.toString()
+    // });
 
     // Sign the permit
     const signature = await resolvedSigner._signTypedData(domain, types, value);
@@ -214,15 +214,15 @@ const CreateChannelPermit: React.FC<CreateChannelPermitProps> = ({ onChannelCrea
     setPermitSignature(signature);
     
     // Log permit signature details for debugging
-    console.log('Permit signature details:', {
-      domain,
-      types,
-      value,
-      signature,
-      v: sig.v,
-      r: sig.r,
-      s: sig.s
-    });
+    // console.log('Permit signature details:', {
+    //   domain,
+    //   types,
+    //   value,
+    //   signature,
+    //   v: sig.v,
+    //   r: sig.r,
+    //   s: sig.s
+    // });
     
     return { v: sig.v, r: sig.r, s: sig.s };
   };
@@ -269,12 +269,21 @@ const CreateChannelPermit: React.FC<CreateChannelPermitProps> = ({ onChannelCrea
     try {
       setIsLoading(true);
       setError('');
-      setStatus('Generating permit signature...');
+      setStatus('🔄 Step 1/2: Generating permit signature (this will trigger the first popup)...');
 
       // Automatically generate permit signature
-      const permitSig = await generatePermitSignature();
+      let permitSig;
+      try {
+        permitSig = await generatePermitSignature();
+        // console.log("✅ Permit signature generated successfully");
+      } catch (permitError: any) {
+        console.error("❌ Permit signature failed:", permitError);
+        setError(`Permit signature failed: ${permitError.message || 'User rejected the signature request'}`);
+        setIsLoading(false);
+        return;
+      }
       
-      setStatus('Creating channel with permit...');
+      setStatus('🔄 Step 2/2: Creating channel with permit (this will trigger the second popup)...');
 
       const resolvedSigner = new providers.Web3Provider(walletClient as any, {
         name: "Filecoin Calibration",
@@ -296,33 +305,33 @@ const CreateChannelPermit: React.FC<CreateChannelPermitProps> = ({ onChannelCrea
       try {
         decimals = await tokenContract.decimals();
       } catch {
-        console.log("Using default decimals: 18");
+        // console.log("Using default decimals: 18");
       }
 
       const parsedAmount = utils.parseUnits(amount, decimals);
 
       // Log parameters for debugging
-      console.log('Contract call parameters:', {
-        payer: address,
-        payee: payee,
-        token: tokenAddress,
-        amount: parsedAmount.toString(),
-        duration: parsedDuration,
-        reclaimDelay: parsedReclaimDelay,
-        deadline: deadline,
-        v: permitSig.v,
-        r: permitSig.r,
-        s: permitSig.s
-      });
+      // console.log('Contract call parameters:', {
+      //   payer: address,
+      //   payee: payee,
+      //   token: tokenAddress,
+      //   amount: parsedAmount.toString(),
+      //   duration: parsedDuration,
+      //   reclaimDelay: parsedReclaimDelay,
+      //   deadline: deadline,
+      //   v: permitSig.v,
+      //   r: permitSig.r,
+      //   s: permitSig.s
+      // });
 
-      // Create channel with ERC20 permit - convert to BigNumber for uint64 parameters
+      // Create channel with ERC20 permit - pass uint64 parameters as numbers
       const tx = await contract.createChannelWithPermit(
         address, // payer
         payee, // payee
         tokenAddress, // token
         parsedAmount, // amount
-        utils.parseUnits(parsedDuration.toString(), 0), // duration as uint64
-        utils.parseUnits(parsedReclaimDelay.toString(), 0), // reclaimDelay as uint64
+        parsedDuration, // duration as uint64
+        parsedReclaimDelay, // reclaimDelay as uint64
         deadline, // deadline
         permitSig.v, // v
         permitSig.r, // r
@@ -330,11 +339,11 @@ const CreateChannelPermit: React.FC<CreateChannelPermitProps> = ({ onChannelCrea
       );
 
       setTxHash(tx.hash);
-      setStatus('Channel creation transaction sent!');
+      setStatus(`Transaction sent to mempool! ${tx.hash}`);
       
       // Wait for transaction
       const receipt = await tx.wait();
-      setStatus('Channel created successfully!');
+      setStatus(`Transaction confirmed in block: ${receipt.blockNumber}`);
       onChannelCreated?.(receipt.transactionHash);
     } catch (err) {
       console.error('Create channel error:', err);
@@ -397,7 +406,7 @@ const CreateChannelPermit: React.FC<CreateChannelPermitProps> = ({ onChannelCrea
       try {
         decimals = await tokenContract.decimals();
       } catch {
-        console.log("Using default decimals: 18");
+        // console.log("Using default decimals: 18");
       }
 
       const nonce = await tokenContract.nonces(address);
@@ -459,7 +468,7 @@ const CreateChannelPermit: React.FC<CreateChannelPermitProps> = ({ onChannelCrea
         signatureValid: recoveredAddress.toLowerCase() === address.toLowerCase()
       };
 
-      console.log('Permit Debug Info:', debugInfo);
+      // console.log('Permit Debug Info:', debugInfo);
       setStatus(`Debug complete. Check console for details.\nSignature valid: ${debugInfo.signatureValid}\nDeadline valid: ${debugInfo.deadlineValid}`);
       
     } catch (error) {
@@ -489,6 +498,9 @@ const CreateChannelPermit: React.FC<CreateChannelPermitProps> = ({ onChannelCrea
           <h4 className="text-sm font-semibold text-blue-800 mb-1">💡 Permit Support</h4>
           <p className="text-xs text-blue-700">
             This component works with ERC20 tokens that support permit functionality. For native FIL payments, use the "Create Channel" tab.
+          </p>
+          <p className="text-xs text-blue-700 mt-2">
+            <strong>Two-step process:</strong> You'll see two popups - first sign the permit message, then confirm the transaction.
           </p>
         </div>
         
@@ -626,7 +638,12 @@ const CreateChannelPermit: React.FC<CreateChannelPermitProps> = ({ onChannelCrea
       {/* Create Channel Button */}
       <div className="flex justify-between items-center">
         <button
-          onClick={handleCreateChannel}
+          onClick={() => {
+            if (permitSupported === true) {
+              setStatus("ℹ️ You'll see two popups: first sign the permit message, then confirm the transaction");
+            }
+            handleCreateChannel();
+          }}
           disabled={!validateForm() || isLoading}
           className="bg-green-600 text-white px-6 py-3 rounded-md hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed font-medium"
         >
@@ -647,17 +664,23 @@ const CreateChannelPermit: React.FC<CreateChannelPermitProps> = ({ onChannelCrea
       {/* Status Messages */}
       {status && (
         <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-md">
-          <p className="text-blue-800">{status}</p>
-          {txHash && (
-            <a
-              href={`https://calibration.filfox.info/tx/${txHash}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-600 hover:text-blue-800 underline text-sm"
-            >
-              View Transaction
-            </a>
-          )}
+          <p className="text-blue-800">
+            {status.includes('Transaction sent to mempool!') ? (
+              <>
+                Transaction sent to mempool!{' '}
+                <a
+                  href={`https://calibration.filscan.io/en/tx/${status.split(' ').pop()}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-600 hover:text-blue-800 underline"
+                >
+                  {status.split(' ').pop()}
+                </a>
+              </>
+            ) : (
+              status
+            )}
+          </p>
         </div>
       )}
 

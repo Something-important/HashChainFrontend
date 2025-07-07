@@ -49,7 +49,7 @@ export function CreateMultisigChannel({ isLoading, setIsLoading }: CreateMultisi
   // Check network
   useEffect(() => {
     if (chainId && chainId !== MULTISIG_TARGET_CHAIN.chainId) {
-      console.log(`Warning: You're on chain ${chainId}, but the contract is deployed on ${MULTISIG_TARGET_CHAIN.chainId}`);
+      // console.log(`Warning: You're on chain ${chainId}, but the contract is deployed on ${MULTISIG_TARGET_CHAIN.chainId}`);
     } else if (isConnected) {
       setErrorMessage(null);
     }
@@ -84,10 +84,10 @@ export function CreateMultisigChannel({ isLoading, setIsLoading }: CreateMultisi
       // Try to call nonces to check if permit is supported
       await tokenContract.nonces(address);
       setPermitSupported(true);
-      console.log("✅ Token supports permit");
+      // console.log("✅ Token supports permit");
     } catch (error) {
       setPermitSupported(false);
-      console.log("❌ Token does not support permit, will use approval");
+      // console.log("❌ Token does not support permit, will use approval");
     } finally {
       setPermitChecking(false);
     }
@@ -133,7 +133,7 @@ export function CreateMultisigChannel({ isLoading, setIsLoading }: CreateMultisi
       try {
         decimals = await tokenContract.decimals();
       } catch {
-        console.log("Using default decimals: 18");
+        // console.log("Using default decimals: 18");
       }
 
       // Approve the contract to spend the amount
@@ -143,9 +143,9 @@ export function CreateMultisigChannel({ isLoading, setIsLoading }: CreateMultisi
       setApprovalStatus(`Approval transaction sent: ${tx.hash}`);
       await tx.wait();
       setApprovalStatus(`✅ Token approved successfully! Tx: ${tx.hash}`);
-    } catch (err: any) {
-      console.error('Approval error:', err);
-      setApprovalStatus(`❌ Approval failed: ${err.message}`);
+    } catch (error: any) {
+      // console.error('Approval error:', error);
+      setApprovalStatus(`❌ Approval failed: ${error?.message}`);
     } finally {
       setIsApproving(false);
     }
@@ -259,40 +259,40 @@ export function CreateMultisigChannel({ isLoading, setIsLoading }: CreateMultisi
       );
 
       setTxHash(tx.hash);
-      setStatus(`Transaction sent to mempool! Hash: ${tx.hash}`);
+      setStatus(`Transaction sent to mempool! ${tx.hash}`);
 
       const receipt = await tx.wait();
       setStatus(`Transaction confirmed in block: ${receipt.blockNumber}`);
-    } catch (err: any) {
-      console.error('CreateMultisigChannel error:', err);
+    } catch (error: any) {
+      // console.error('CreateMultisigChannel error:', error);
       
       let errorMsg = "Unknown error";
       
       // Handle specific contract errors
-      if (err.code === "INSUFFICIENT_FUNDS") {
+      if (error?.code === "INSUFFICIENT_FUNDS") {
         errorMsg = "Insufficient FIL for gas or transaction.";
-      } else if (err.code === "UNPREDICTABLE_GAS_LIMIT") {
+      } else if (error?.code === "UNPREDICTABLE_GAS_LIMIT") {
         errorMsg = "Cannot estimate gas. Check contract address or parameters.";
-      } else if (err.code === -32603 || err.message?.includes("Internal JSON-RPC error")) {
-        errorMsg = "RPC Error: Token address may not exist or be invalid. Try using 0x0000000000000000000000000000000000000000 for native FIL.";
-      } else if (err.errorName === "ChannelAlreadyExist") {
+      } else if (error?.code === -32603 || error?.message?.includes("Internal JSON-RPC error")) {
+        errorMsg = `Internal RPC Error: ${error?.message || error?.reason || 'Unknown RPC error'}. This usually indicates a contract state issue or invalid parameters.`;
+      } else if (error?.errorName === "ChannelAlreadyExist") {
         errorMsg = "Channel already exists for this payer/payee/token combination.";
-      } else if (err.errorName === "IncorrectAmount") {
+      } else if (error?.errorName === "IncorrectAmount") {
         errorMsg = "Incorrect amount sent. Check the amount field.";
-      } else if (err.errorName === "ReclaimAfterMustBeAfterExpiration") {
+      } else if (error?.errorName === "ReclaimAfterMustBeAfterExpiration") {
         errorMsg = "Reclaim delay must be greater than duration.";
-      } else if (err.errorName === "AddressIsNotContract") {
+      } else if (error?.errorName === "AddressIsNotContract") {
         errorMsg = "Token address is not a contract.";
-      } else if (err.errorName === "AddressIsNotERC20") {
+      } else if (error?.errorName === "AddressIsNotERC20") {
         errorMsg = "Token address is not a valid ERC20 token.";
-      } else if (err.errorName === "InsufficientAllowance") {
+      } else if (error?.errorName === "InsufficientAllowance") {
         errorMsg = "Token allowance insufficient. Please approve tokens first.";
-      } else if (err.message && err.message.includes("Error decoding failed")) {
+      } else if (error?.message && error?.message.includes("Error decoding failed")) {
         errorMsg = "Contract error: Invalid parameters or contract state. Check your inputs.";
-      } else if (err.reason) {
-        errorMsg = `Contract Error: ${err.reason}`;
-      } else if (err.message) {
-        errorMsg = `Transaction Error: ${err.message}`;
+      } else if (error?.reason) {
+        errorMsg = `Contract Error: ${error?.reason}`;
+      } else if (error?.message) {
+        errorMsg = `Transaction Error: ${error?.message}`;
       } else {
         errorMsg = "Failed to create channel. Please check your parameters and try again.";
       }
@@ -403,7 +403,7 @@ export function CreateMultisigChannel({ isLoading, setIsLoading }: CreateMultisi
       try {
         decimals = await tokenContract.decimals();
       } catch {
-        console.log("Using default decimals: 18");
+        // console.log("Using default decimals: 18");
       }
 
       const parsedAmountWei = utils.parseUnits(amount, decimals);
@@ -457,39 +457,39 @@ export function CreateMultisigChannel({ isLoading, setIsLoading }: CreateMultisi
       );
 
       setTxHash(tx.hash);
-      setStatus(`Transaction sent to mempool! Hash: ${tx.hash}`);
+      setStatus(`Transaction sent to mempool! ${tx.hash}`);
 
       const receipt = await tx.wait();
       setStatus(`Transaction confirmed in block: ${receipt.blockNumber}`);
-    } catch (err: any) {
-      console.error('CreateChannelWithPermit error:', err);
+    } catch (error: any) {
+      // console.error('CreateChannelWithPermit error:', error);
       
       let errorMsg = "Unknown error";
       
-      if (err.code === "INSUFFICIENT_FUNDS") {
+      if (error?.code === "INSUFFICIENT_FUNDS") {
         errorMsg = "Insufficient FIL for gas or transaction.";
-      } else if (err.code === "UNPREDICTABLE_GAS_LIMIT") {
+      } else if (error?.code === "UNPREDICTABLE_GAS_LIMIT") {
         errorMsg = "Cannot estimate gas. Check contract address or parameters.";
-      } else if (err.code === -32603 || err.message?.includes("Internal JSON-RPC error")) {
-        errorMsg = "RPC Error: Token address may not exist or be invalid.";
-      } else if (err.errorName === "ChannelAlreadyExist") {
+      } else if (error?.code === -32603 || error?.message?.includes("Internal JSON-RPC error")) {
+        errorMsg = `Internal RPC Error: ${error?.message || error?.reason || 'Unknown RPC error'}. This usually indicates a contract state issue or invalid parameters.`;
+      } else if (error?.errorName === "ChannelAlreadyExist") {
         errorMsg = "Channel already exists for this payer/payee/token combination.";
-      } else if (err.errorName === "IncorrectAmount") {
+      } else if (error?.errorName === "IncorrectAmount") {
         errorMsg = "Incorrect amount sent. Check the amount field.";
-      } else if (err.errorName === "ReclaimAfterMustBeAfterExpiration") {
+      } else if (error?.errorName === "ReclaimAfterMustBeAfterExpiration") {
         errorMsg = "Reclaim delay must be greater than duration.";
-      } else if (err.errorName === "AddressIsNotContract") {
+      } else if (error?.errorName === "AddressIsNotContract") {
         errorMsg = "Token address is not a contract.";
-      } else if (err.errorName === "AddressIsNotERC20") {
+      } else if (error?.errorName === "AddressIsNotERC20") {
         errorMsg = "Token address is not a valid ERC20 token.";
-      } else if (err.errorName === "InsufficientAllowance") {
+      } else if (error?.errorName === "InsufficientAllowance") {
         errorMsg = "Token allowance insufficient. Please approve tokens first.";
-      } else if (err.message && err.message.includes("Error decoding failed")) {
+      } else if (error?.message && error?.message.includes("Error decoding failed")) {
         errorMsg = "Contract error: Invalid parameters or contract state. Check your inputs.";
-      } else if (err.reason) {
-        errorMsg = `Contract Error: ${err.reason}`;
-      } else if (err.message) {
-        errorMsg = `Transaction Error: ${err.message}`;
+      } else if (error?.reason) {
+        errorMsg = `Contract Error: ${error?.reason}`;
+      } else if (error?.message) {
+        errorMsg = `Transaction Error: ${error?.message}`;
       } else {
         errorMsg = "Failed to create channel. Please check your parameters and try again.";
       }
@@ -530,7 +530,7 @@ export function CreateMultisigChannel({ isLoading, setIsLoading }: CreateMultisi
         try {
           decimals = await tokenContract.decimals();
         } catch {
-          console.log("Using default decimals: 18");
+          // console.log("Using default decimals: 18");
         }
 
         const requiredAmount = utils.parseUnits(amount, decimals);
@@ -540,8 +540,8 @@ export function CreateMultisigChannel({ isLoading, setIsLoading }: CreateMultisi
           setErrorMessage("Token approval required. Please approve tokens first using the 'Approve Token Manually' button.");
           return;
         }
-      } catch (error) {
-        console.error("Error checking allowance:", error);
+      } catch (error: any) {
+        // console.error("Error checking allowance:", error);
         setErrorMessage("Error checking token allowance. Please try approving tokens manually.");
         return;
       }
@@ -684,7 +684,23 @@ export function CreateMultisigChannel({ isLoading, setIsLoading }: CreateMultisi
         
         {status && (
           <div className="p-3 bg-green-50 border border-green-200 rounded">
-            <p className="text-green-800 font-medium">{status}</p>
+            <p className="text-green-800 font-medium">
+              {status.includes('Transaction sent to mempool!') ? (
+                <>
+                  Transaction sent to mempool!{' '}
+                  <a
+                    href={`https://calibration.filscan.io/en/tx/${status.split(' ').pop()}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 hover:text-blue-800 underline"
+                  >
+                    {status.split(' ').pop()}
+                  </a>
+                </>
+              ) : (
+                status
+              )}
+            </p>
           </div>
         )}
         
@@ -693,18 +709,6 @@ export function CreateMultisigChannel({ isLoading, setIsLoading }: CreateMultisi
             <p className="text-red-800 font-medium">Error</p>
             <p className="text-red-700 text-sm">{errorMessage}</p>
           </div>
-        )}
-
-        {/* Transaction Link */}
-        {txHash && (
-          <a
-            href={`https://calibration.filscan.io/en/tx/${txHash}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-green-600 hover:text-green-800 underline text-sm"
-          >
-            View on Calibration Explorer →
-          </a>
         )}
 
         {/* Token Support Status */}

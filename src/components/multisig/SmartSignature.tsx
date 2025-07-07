@@ -875,14 +875,17 @@ export function SmartSignature({ isLoading, setIsLoading }: SmartSignatureProps)
                 {redeemResult.message || redeemResult.error}
               </p>
               {redeemResult.hash && (
-                <a
-                  href={`https://calibration.filscan.io/en/tx/${redeemResult.hash}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-blue-600 hover:text-blue-800 underline text-sm"
-                >
-                  View Transaction →
-                </a>
+                <div className="mt-2">
+                  <span className="text-green-700">Transaction sent to mempool! </span>
+                  <a
+                    href={`https://calibration.filscan.io/en/tx/${redeemResult.hash}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 hover:text-blue-800 underline"
+                  >
+                    {redeemResult.hash}
+                  </a>
+                </div>
               )}
             </div>
           )}
