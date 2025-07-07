@@ -1,6 +1,6 @@
 {
-  "name": "hashchain Fronted",
-  "version": "0.1.0",
+  "name": "Hashchain Frontend",
+  "version": "0.1.2",
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
