@@ -228,7 +228,7 @@ export function ReclaimMultisigChannel({ isLoading, setIsLoading }: ReclaimMulti
         <button
           onClick={reclaimChannel}
           className="bg-orange-600 text-white px-6 py-2 rounded font-semibold hover:bg-orange-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-          disabled={Boolean(isPending || !isConnected)}
+          disabled={isPending === true || isConnected !== true}
         >
           {isPending ? 'Reclaiming...' : 'Reclaim Channel'}
         </button>

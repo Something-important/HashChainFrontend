@@ -761,7 +761,7 @@ export function CreateChannel({ isLoading, setIsLoading }: CreateChannelProps) {
               <button
                 onClick={approveToken}
                 className="bg-yellow-600 text-white px-4 py-2 rounded text-sm font-semibold hover:bg-yellow-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                disabled={Boolean(isApproving || !isConnected)}
+                disabled={isApproving === true || isConnected !== true}
               >
                 {isApproving ? 'Approving...' : 'Approve Token Manually'}
               </button>
@@ -862,13 +862,20 @@ export function CreateChannel({ isLoading, setIsLoading }: CreateChannelProps) {
           </div>
         )}
 
+        {/* Debug Output for Button State */}
+        <div className="mb-2 p-2 bg-gray-100 rounded text-xs text-gray-700">
+          <div><strong>Debug:</strong></div>
+          <div>isPending: {String(isPending)}</div>
+          <div>isConnected: {String(isConnected)}</div>
+          <div>permitChecking: {String(permitChecking)}</div>
+        </div>
         {/* Create Channel Button */}
         <button
           onClick={async () => {
             await smartCreateChannel();
           }}
           className="bg-blue-600 text-white px-6 py-2 rounded font-semibold hover:bg-blue-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-          disabled={Boolean(isPending || !isConnected || permitChecking)}
+          disabled={isPending === true || isConnected !== true || permitChecking === true}
         >
           {isPending ? 'Creating...' : 'Create Channel'}
         </button>

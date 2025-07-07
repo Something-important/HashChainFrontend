@@ -616,7 +616,7 @@ export function CreateMultisigChannel({ isLoading, setIsLoading }: CreateMultisi
               <button
                 onClick={approveToken}
                 className="bg-yellow-600 text-white px-4 py-2 rounded text-sm font-semibold hover:bg-yellow-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                disabled={Boolean(isApproving || !isConnected)}
+                disabled={isApproving === true || isConnected !== true}
               >
                 {isApproving ? 'Approving...' : 'Approve Token Manually'}
               </button>
@@ -732,7 +732,7 @@ export function CreateMultisigChannel({ isLoading, setIsLoading }: CreateMultisi
             await smartCreateChannel();
           }}
           className="bg-blue-600 text-white px-6 py-2 rounded font-semibold hover:bg-blue-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-          disabled={Boolean(isPending || !isConnected || permitChecking)}
+          disabled={isPending === true || isConnected !== true || permitChecking === true}
         >
           {isPending ? 'Creating...' : 'Create Multisig Channel'}
         </button>

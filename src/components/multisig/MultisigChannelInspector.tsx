@@ -213,7 +213,7 @@ export function MultisigChannelInspector({ isLoading, setIsLoading }: MultisigCh
         <button
           onClick={inspectChannel}
           className="bg-blue-600 text-white px-6 py-2 rounded font-semibold hover:bg-blue-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-          disabled={Boolean(isLoadingChannel || !isConnected)}
+          disabled={isLoadingChannel === true || isConnected !== true}
         >
           {isLoadingChannel ? 'Inspecting...' : 'Inspect Channel'}
         </button>
