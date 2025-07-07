@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { providers, utils, Contract } from "ethers"; // ethers.js v5.8.0
-import { HashchainProtocol, HashchainProtocolABI } from "@hashchain/sdk";
+// import { HashchainProtocol, HashchainProtocolABI } from "@hashchain/sdk";
 import { useAccount, useChainId, usePublicClient, useWalletClient } from "wagmi";
 
 // Contract address
@@ -18,7 +18,7 @@ interface CreateChannelProps {
   setIsLoading: (loading: boolean) => void;
 }
 
-export function CreateChannel({ isLoading, setIsLoading }: CreateChannelProps) {
+export function CreateChannel({ setIsLoading }: CreateChannelProps) {
   const [merchant, setMerchant] = useState("");
   const [trustAnchor, setTrustAnchor] = useState("");
   const [amount, setAmount] = useState("");
@@ -98,7 +98,7 @@ export function CreateChannel({ isLoading, setIsLoading }: CreateChannelProps) {
       await tokenContract.nonces(address);
       setPermitSupported(true);
       console.log("✅ Token supports permit");
-    } catch (error) {
+    } catch {
       setPermitSupported(false);
       console.log("❌ Token does not support permit, will use approval");
     } finally {
@@ -150,9 +150,9 @@ export function CreateChannel({ isLoading, setIsLoading }: CreateChannelProps) {
       setApprovalStatus(`Approval transaction sent: ${tx.hash}`);
       await tx.wait();
       setApprovalStatus(`✅ Token approved successfully! Tx: ${tx.hash}`);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Approval error:', err);
-      setApprovalStatus(`❌ Approval failed: ${err.message}`);
+      setApprovalStatus(`❌ Approval failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
     } finally {
       setIsApproving(false);
     }
@@ -282,7 +282,7 @@ export function CreateChannel({ isLoading, setIsLoading }: CreateChannelProps) {
       );
 
       setTxHash(tx.hash);
-      setStatus(`Transaction sent! Hash: ${tx.hash}`);
+      setStatus(`Transaction sent to mempool! Hash: ${tx.hash}`);
 
       const receipt = await tx.wait();
       setStatus(`Transaction confirmed in block: ${receipt.blockNumber}`);
@@ -503,7 +503,7 @@ export function CreateChannel({ isLoading, setIsLoading }: CreateChannelProps) {
       );
 
       setTxHash(tx.hash);
-      setStatus(`Transaction sent! Hash: ${tx.hash}`);
+      setStatus(`Transaction sent to mempool! Hash: ${tx.hash}`);
 
       const receipt = await tx.wait();
       setStatus(`Transaction confirmed in block: ${receipt.blockNumber}`);
@@ -657,7 +657,7 @@ export function CreateChannel({ isLoading, setIsLoading }: CreateChannelProps) {
             const approveTx = await tokenContract.approve(CONTRACT_ADDRESS, requiredAmount);
             await approveTx.wait();
             setStatus("Token approval successful!");
-          } catch (approveErr: any) {
+          } catch (approveErr: unknown) {
             console.error('Approval error:', approveErr);
             setErrorMessage("Token approval failed. Please try again or approve manually.");
             setIsPending(false);
@@ -707,7 +707,7 @@ export function CreateChannel({ isLoading, setIsLoading }: CreateChannelProps) {
                   <p>⚠️ <strong>Manual Approval Required:</strong> Traditional approve transaction</p>
                   <p>• You may need to approve tokens manually</p>
                   <p>• Two transactions: approve + create channel</p>
-                  <p>• Use the "Approve Token Manually" button if needed</p>
+                  <p>• Use the &quot;Approve Token Manually&quot; button if needed</p>
                 </>
               ) : (
                 <p>🔍 Checking token capabilities...</p>
@@ -836,17 +836,14 @@ export function CreateChannel({ isLoading, setIsLoading }: CreateChannelProps) {
 
         {/* Transaction Link */}
         {txHash && (
-          <p className="text-green-600 bg-green-50 p-3 rounded">
-            Transaction successful! Hash:{" "}
-            <a
-              href={`https://calibration.filscan.io/en/tx/${txHash}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="underline"
-            >
-              View on Calibration Explorer
-            </a>
-          </p>
+          <a
+            href={`https://calibration.filscan.io/en/tx/${txHash}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline"
+          >
+            View on Calibration Explorer
+          </a>
         )}
 
         {/* Token Support Status */}

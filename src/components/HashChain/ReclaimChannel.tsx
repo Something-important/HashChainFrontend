@@ -130,7 +130,7 @@ export function ReclaimChannel({ isLoading, setIsLoading }: ReclaimChannelProps)
 
       console.log("Transaction hash:", tx.hash);
       setTxHash(tx.hash);
-      setStatus(`Transaction sent! Hash: ${tx.hash}`);
+      setStatus(`Transaction sent to mempool! Hash: ${tx.hash}`);
 
       const receipt = await tx.wait();
       setStatus(`Transaction confirmed in block: ${receipt.blockNumber}`);
@@ -212,17 +212,14 @@ export function ReclaimChannel({ isLoading, setIsLoading }: ReclaimChannelProps)
 
         {/* Transaction Link */}
         {txHash && (
-          <p className="text-green-600 bg-green-50 p-3 rounded">
-            Transaction successful! Hash:{" "}
-            <a
-              href={`https://calibration.filscan.io/en/tx/${txHash}/`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="underline"
-            >
-              View on Filecoin Explorer
-            </a>
-          </p>
+          <a
+            href={`https://calibration.filscan.io/en/tx/${txHash}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline"
+          >
+            View on Calibration Explorer
+          </a>
         )}
 
         {/* Reclaim Button */}

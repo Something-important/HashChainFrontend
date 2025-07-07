@@ -141,7 +141,7 @@ export function RedeemMultisigChannel({ isLoading, setIsLoading }: RedeemMultisi
       );
 
       setTxHash(tx.hash);
-      setStatus(`Transaction sent! Hash: ${tx.hash}`);
+      setStatus(`Transaction sent to mempool! Hash: ${tx.hash}`);
 
       const receipt = await tx.wait();
       setStatus(`Transaction confirmed in block: ${receipt.blockNumber}`);
@@ -279,20 +279,14 @@ export function RedeemMultisigChannel({ isLoading, setIsLoading }: RedeemMultisi
 
         {/* Transaction Link */}
         {txHash && (
-          <div className="p-3 bg-green-50 border border-green-200 rounded">
-            <p className="text-green-800 font-medium">Transaction Successful!</p>
-            <p className="text-green-700 text-sm">
-              Hash: {txHash.slice(0, 10)}...{txHash.slice(-8)}
-            </p>
-            <a
-              href={`https://calibration.filscan.io/en/tx/${txHash}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-green-600 hover:text-green-800 underline text-sm"
-            >
-              View on Calibration Explorer →
-            </a>
-          </div>
+          <a
+            href={`https://calibration.filscan.io/en/tx/${txHash}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline"
+          >
+            View on Calibration Explorer
+          </a>
         )}
 
         {/* Redeem Channel Button */}
