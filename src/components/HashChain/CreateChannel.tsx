@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { providers, utils, Contract } from "ethers"; // ethers.js v5.8.0
-// import { HashchainProtocol, HashchainProtocolABI } from "@hashchain/sdk";
+import { HashchainProtocol, HashchainProtocolABI } from "@hashchain/sdk";
 import { useAccount, useChainId, usePublicClient, useWalletClient } from "wagmi";
 
 // Contract address
@@ -35,11 +35,19 @@ export function CreateChannel({ setIsLoading }: CreateChannelProps) {
   const [approvalStatus, setApprovalStatus] = useState<string>("");
   const [permitSupported, setPermitSupported] = useState<boolean | null>(null);
   const [permitChecking, setPermitChecking] = useState(false);
+  const [existingChannel, setExistingChannel] = useState<any>(null);
+  const [checkingChannel, setCheckingChannel] = useState(false);
 
   const { address, isConnected } = useAccount();
   const chainId = useChainId();
   const publicClient = usePublicClient();
   const { data: walletClient } = useWalletClient();
+  const [isClient, setIsClient] = useState(false);
+
+  // Prevent hydration mismatch
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   // Derive provider - use direct RPC URL to avoid ENS issues
   const provider = publicClient ? new providers.JsonRpcProvider(publicClient.transport.url, {
@@ -77,7 +85,14 @@ export function CreateChannel({ setIsLoading }: CreateChannelProps) {
     }
   }, [tokenAddress, isConnected, walletClient]);
 
-  // Check if token supports permit
+  // Check for existing channel when merchant or token changes
+  useEffect(() => {
+    if (isConnected && address && merchant.trim() && tokenAddress) {
+      checkExistingChannel();
+    } else {
+      setExistingChannel(null);
+    }
+  }, [merchant, tokenAddress, isConnected, address]);  // Check if token supports permit
   const checkPermitSupport = async () => {
     if (!walletClient || tokenAddress === "0x0000000000000000000000000000000000000000") return;
     
@@ -103,6 +118,66 @@ export function CreateChannel({ setIsLoading }: CreateChannelProps) {
       console.log("❌ Token does not support permit, will use approval");
     } finally {
       setPermitChecking(false);
+    }
+  };
+
+  // Check for existing channel
+  const checkExistingChannel = async () => {
+    if (!isConnected || !address || !merchant.trim()) {
+      return;
+    }
+
+    setCheckingChannel(true);
+    try {
+      const resolvedSigner = new providers.Web3Provider(walletClient as any, {
+        name: "Filecoin Calibration",
+        chainId: 314159
+      }).getSigner();
+
+      const contract = new Contract(CONTRACT_ADDRESS, [
+        {
+          type: "function",
+          name: "channelsMapping",
+          inputs: [
+            { name: "payer", type: "address" },
+            { name: "merchant", type: "address" },
+            { name: "token", type: "address" }
+          ],
+          outputs: [
+            { name: "token", type: "address" },
+            { name: "trustAnchor", type: "bytes32" },
+            { name: "amount", type: "uint256" },
+            { name: "numberOfTokens", type: "uint16" },
+            { name: "merchantWithdrawAfterBlocks", type: "uint64" },
+            { name: "payerWithdrawAfterBlocks", type: "uint64" }
+          ],
+          stateMutability: "view",
+        }
+      ], resolvedSigner);
+
+      const channelInfo = await contract.channelsMapping(
+        address,
+        utils.getAddress(merchant.trim()),
+        utils.getAddress(tokenAddress)
+      );
+
+      if (channelInfo && channelInfo.amount && channelInfo.amount.gt(0)) {
+        setExistingChannel({
+          token: channelInfo.token,
+          trustAnchor: channelInfo.trustAnchor,
+          amount: channelInfo.amount.toString(),
+          numberOfTokens: channelInfo.numberOfTokens.toString(),
+          merchantWithdrawAfterBlocks: channelInfo.merchantWithdrawAfterBlocks.toString(),
+          payerWithdrawAfterBlocks: channelInfo.payerWithdrawAfterBlocks.toString()
+        });
+      } else {
+        setExistingChannel(null);
+      }
+    } catch (error) {
+      console.error('Error checking existing channel:', error);
+      setExistingChannel(null);
+    } finally {
+      setCheckingChannel(false);
     }
   };
 
@@ -159,6 +234,7 @@ export function CreateChannel({ setIsLoading }: CreateChannelProps) {
   };
 
   const createChannel = async () => {
+    console.log("Creating channel with SDK...");
     setErrorMessage("");
     setTxHash(null);
     setStatus("");
@@ -187,12 +263,12 @@ export function CreateChannel({ setIsLoading }: CreateChannelProps) {
     }
 
     // Optional network validation - uncomment if you want to enforce it
-    // if (chainId !== TARGET_CHAIN.chainId) {
-    //   setErrorMessage(`Wrong network. Please switch to ${TARGET_CHAIN.chainName} (Chain ID ${TARGET_CHAIN.chainId}).`);
-    //   setIsPending(false);
-    //   setIsLoading(false);
-    //   return;
-    // }
+    if (chainId !== TARGET_CHAIN.chainId) {
+      setErrorMessage(`Wrong network. Please switch to ${TARGET_CHAIN.chainName} (Chain ID ${TARGET_CHAIN.chainId}).`);
+      setIsPending(false);
+      setIsLoading(false);
+      return;
+    }
 
     // Input validation
     if (!merchant || !utils.isAddress(merchant.trim())) {
@@ -218,80 +294,81 @@ export function CreateChannel({ setIsLoading }: CreateChannelProps) {
     }
 
     const parsedTokens = parseInt(numberOfTokens, 10);
-    if (!numberOfTokens || isNaN(parsedTokens) || parsedTokens <= 0) {
-      setErrorMessage("Invalid number of tokens (must be a positive integer).");
+    if (!numberOfTokens || isNaN(parsedTokens) || parsedTokens <= 0 || parsedTokens > 65535) {
+      setErrorMessage("Invalid number of tokens (must be a positive integer <= 65535).");
       setIsPending(false);
       setIsLoading(false);
       return;
     }
 
     const parsedMerchantBlocks = parseInt(merchantWithdrawAfterBlocks, 10);
-    if (!merchantWithdrawAfterBlocks || isNaN(parsedMerchantBlocks) || parsedMerchantBlocks <= 0) {
-      setErrorMessage("Invalid merchant withdraw blocks (must be a positive integer).");
+    if (!merchantWithdrawAfterBlocks || isNaN(parsedMerchantBlocks) || parsedMerchantBlocks <= 0 || parsedMerchantBlocks > 18446744073709551615) {
+      setErrorMessage("Invalid merchant withdraw blocks (must be a positive integer <= 2^64-1).");
       setIsPending(false);
       setIsLoading(false);
       return;
     }
 
     const parsedPayerBlocks = parseInt(payerWithdrawAfterBlocks, 10);
-    if (!payerWithdrawAfterBlocks || isNaN(parsedPayerBlocks) || parsedPayerBlocks <= 0) {
-      setErrorMessage("Invalid payer withdraw blocks (must be a positive integer).");
+    if (!payerWithdrawAfterBlocks || isNaN(parsedPayerBlocks) || parsedPayerBlocks <= 0 || parsedPayerBlocks > 18446744073709551615) {
+      setErrorMessage("Invalid payer withdraw blocks (must be a positive integer <= 2^64-1).");
       setIsPending(false);
       setIsLoading(false);
       return;
     }
 
     try {
-      // Derive signer (ethers v5.x)
       const resolvedSigner = new providers.Web3Provider(walletClient as any, {
         name: "Filecoin Calibration",
         chainId: 314159
       }).getSigner();
 
-      // Create contract instance directly using ethers
-      const contract = new Contract(CONTRACT_ADDRESS, [
-        {
-          type: "function",
-          name: "createChannel",
-          inputs: [
-            { name: "merchant", type: "address" },
-            { name: "token", type: "address" },
-            { name: "trustAnchor", type: "bytes32" },
-            { name: "amount", type: "uint256" },
-            { name: "numberOfTokens", type: "uint16" },
-            { name: "merchantWithdrawAfterBlocks", type: "uint64" },
-            { name: "payerWithdrawAfterBlocks", type: "uint64" },
-          ],
-          outputs: [],
-          stateMutability: "payable",
-        }
-      ], resolvedSigner);
+      // Initialize Hashchain SDK
+      let hashchainSDK: HashchainProtocol;
+      try {
+        hashchainSDK = new HashchainProtocol(provider, CONTRACT_ADDRESS, resolvedSigner);
+      } catch (err: any) {
+        setErrorMessage(`SDK Error: Failed to initialize HashchainProtocol - ${err.message || "Invalid parameters"}`);
+        setIsPending(false);
+        setIsLoading(false);
+        return;
+      }
 
-      setStatus("Creating payment channel...");
+      setStatus("Creating payment channel with SDK...");
       
-      // Call contract directly with proper parameters
-      const tx = await contract.createChannel(
-        utils.getAddress(merchant.trim()), // merchant address (trimmed)
-        utils.getAddress(tokenAddress), // token address
-        trustAnchor, // trustAnchor as bytes32
-        utils.parseEther(amount), // amount in wei
-        parsedTokens, // numberOfTokens
-        parsedMerchantBlocks, // merchantWithdrawAfterBlocks
-        parsedPayerBlocks, // payerWithdrawAfterBlocks
-        { value: utils.parseEther(amount) } // Include value for native FIL
-      );
+      console.log("Creating channel with SDK:", {
+        merchant: utils.getAddress(merchant.trim()),
+        tokenAddress: utils.getAddress(tokenAddress),
+        trustAnchor,
+        amount: utils.parseEther(amount).toString(),
+        numberOfTokens: parsedTokens,
+        merchantWithdrawAfterBlocks: parsedMerchantBlocks,
+        payerWithdrawAfterBlocks: parsedPayerBlocks
+      });
+
+      const tx = await hashchainSDK.createChannel({
+        merchant: utils.getAddress(merchant.trim()),
+        tokenAddress: utils.getAddress(tokenAddress),
+        trustAnchor,
+        amount: utils.parseEther(amount),
+        numberOfTokens: parsedTokens,
+        merchantWithdrawAfterBlocks: parsedMerchantBlocks,
+        payerWithdrawAfterBlocks: parsedPayerBlocks
+      });
 
       setTxHash(tx.hash);
       setStatus(`Transaction sent to mempool! ${tx.hash}`);
 
       const receipt = await tx.wait();
       setStatus(`Transaction confirmed in block: ${receipt.blockNumber}`);
+      
+      // Refresh existing channel info
+      await checkExistingChannel();
     } catch (err: any) {
-      // console.error('CreateChannel error:', err);
+      console.error('CreateChannel SDK error:', err);
       
       let errorMsg = "Unknown error";
       
-      // Handle specific contract errors
       if (err.code === "INSUFFICIENT_FUNDS") {
         errorMsg = "Insufficient FIL for gas or transaction.";
       } else if (err.code === "UNPREDICTABLE_GAS_LIMIT") {
@@ -302,8 +379,8 @@ export function CreateChannel({ setIsLoading }: CreateChannelProps) {
         errorMsg = "Channel already exists for this payer/merchant/token combination.";
       } else if (err.errorName === "IncorrectAmount") {
         errorMsg = "Incorrect amount sent. Check the amount field.";
-      } else if (err.errorName === "ReclaimAfterMustBeAfterExpiration") {
-        errorMsg = "Reclaim delay must be greater than duration.";
+      } else if (err.errorName === "MerchantWithdrawTimeTooShort") {
+        errorMsg = "Merchant withdraw time is too short compared to payer withdraw time.";
       } else if (err.errorName === "AddressIsNotContract") {
         errorMsg = "Token address is not a contract.";
       } else if (err.errorName === "AddressIsNotERC20") {
@@ -548,7 +625,6 @@ export function CreateChannel({ setIsLoading }: CreateChannelProps) {
     }
   };
 
-  // Smart channel creation that automatically chooses between permit and approval
   const smartCreateChannel = async () => {
     setErrorMessage("");
     setTxHash(null);
@@ -835,17 +911,7 @@ export function CreateChannel({ setIsLoading }: CreateChannelProps) {
         {status && <p className="text-green-600 bg-green-50 p-3 rounded">{status}</p>}
         {errorMessage && <p className="text-red-600 bg-red-50 p-3 rounded">Error: {errorMessage}</p>}
 
-        {/* Transaction Link */}
-        {txHash && (
-          <a
-            href={`https://calibration.filscan.io/en/tx/${txHash}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="underline"
-          >
-            View on Calibration Explorer <br></br>
-          </a>
-        )}
+
 
         {/* Token Support Status */}
         {tokenAddress !== "0x0000000000000000000000000000000000000000" && (
@@ -860,22 +926,49 @@ export function CreateChannel({ setIsLoading }: CreateChannelProps) {
           </div>
         )}
 
-        {/* Debug Output for Button State */}
-        <div className="mb-2 p-2 bg-gray-100 rounded text-xs text-gray-700">
-          <div><strong>Debug:</strong></div>
-          <div>isConnected: {String(isConnected)}</div>
-          <div>permitChecking: {String(permitChecking)}</div>
-        </div>
+        {/* Existing Channel Information */}
+        {checkingChannel && (
+          <div className="mb-4 p-3 bg-blue-50 rounded border border-blue-200">
+            <p className="text-sm text-blue-600">🔍 Checking for existing channel...</p>
+          </div>
+        )}
+        
+        {existingChannel && (
+          <div className="mb-4 p-4 bg-yellow-50 rounded border border-yellow-200">
+            <h4 className="text-sm font-semibold text-yellow-800 mb-2">⚠️ Existing Channel Found</h4>
+            <div className="text-xs text-yellow-700 space-y-1">
+              <p><strong>Token:</strong> {existingChannel.token}</p>
+              <p><strong>Amount:</strong> {utils.formatEther(existingChannel.amount)} FIL</p>
+              <p><strong>Number of Tokens:</strong> {existingChannel.numberOfTokens}</p>
+              <p><strong>Trust Anchor:</strong> {existingChannel.trustAnchor}</p>
+              <p><strong>Merchant Withdraw After:</strong> {existingChannel.merchantWithdrawAfterBlocks} blocks</p>
+              <p><strong>Payer Withdraw After:</strong> {existingChannel.payerWithdrawAfterBlocks} blocks</p>
+            </div>
+            <p className="text-xs text-yellow-600 mt-2">
+              A channel already exists for this payer/merchant/token combination. 
+              You cannot create another channel with the same parameters.
+            </p>
+          </div>
+        )}
+
+
+
         {/* Create Channel Button */}
-        <button
-          onClick={async () => {
-            await smartCreateChannel();
-          }}
-          className="bg-blue-600 text-white px-6 py-2 rounded font-semibold hover:bg-blue-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-          disabled={isPending === true || isConnected !== true || permitChecking === true}
-        >
-          {isPending ? 'Creating...' : 'Create Channel'}
-        </button>
+        {isClient && (
+          <button
+            onClick={async () => {
+              if (tokenAddress === "0x0000000000000000000000000000000000000000") {
+                await createChannel(); // SDK for native FIL
+              } else {
+                await createChannelWithPermit(); // Permit for ERC20
+              }
+            }}
+            className="w-full bg-blue-600 text-white px-6 py-2 rounded font-semibold hover:bg-blue-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={isPending === true || isConnected !== true || permitChecking === true || existingChannel !== null}
+          >
+            {isPending ? 'Creating...' : 'Create Channel'}
+          </button>
+        )}
       </div>
     </div>
   );
